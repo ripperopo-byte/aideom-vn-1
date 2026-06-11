@@ -457,6 +457,19 @@ except Exception:
     def _render_deep(n):
         return
 
+try:
+    from aideom_answers import ANS as _ANS
+except Exception:
+    _ANS = {}
+
+
+def _ansbox(text):
+    st.markdown(
+        "<div style='background:#f1f7f3;border-left:3px solid #16a34a;border-radius:6px;"
+        "padding:8px 12px;margin:2px 0 12px;font-size:14px;line-height:1.6'>"
+        "✅ <b>Gợi ý đáp án.</b> " + text + "</div>",
+        unsafe_allow_html=True)
+
 
 def _detail_objective(n):
     d = _DETAIL.get(n)
@@ -473,11 +486,18 @@ def _detail_tasks(n):
     d = _DETAIL.get(n)
     if not d:
         return
+    a = _ANS.get(n, {})
+    ya = a.get("yeucau", [])
+    ta = a.get("thaoluan", [])
     st.write("")
     st.markdown("---")
-    with st.expander("💻 Yêu cầu lập trình (theo đề bài)", expanded=False):
-        for q in d["yeucau"]:
-            st.markdown("- " + q)
-    with st.expander("🏛️ Câu hỏi thảo luận chính sách", expanded=False):
-        for q in d["thaoluan"]:
-            st.markdown("- " + q)
+    with st.expander("💻 Yêu cầu lập trình + gợi ý đáp án", expanded=False):
+        for i, q in enumerate(d["yeucau"]):
+            st.markdown(q)
+            if i < len(ya):
+                _ansbox(ya[i])
+    with st.expander("🏛️ Câu hỏi thảo luận chính sách + gợi ý trả lời", expanded=False):
+        for i, q in enumerate(d["thaoluan"]):
+            st.markdown(q)
+            if i < len(ta):
+                _ansbox(ta[i])
