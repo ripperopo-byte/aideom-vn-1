@@ -4,7 +4,17 @@ Giữ NGUYÊN cách phân tích/diễn đạt của báo cáo để không phả
 import os
 import streamlit as st
 
-CHART_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "charts")
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+CHART_DIR = os.path.join(_ROOT, "charts")
+_CHART_DIRS = [CHART_DIR, _ROOT]
+
+
+def _resolve(name):
+    for d in _CHART_DIRS:
+        p = os.path.join(d, name)
+        if os.path.exists(p):
+            return p
+    return None
 
 META = {
     "sv": "Trần Đình Hướng", "msv": "23050491", "lop": "QH-2023-E KTPT 3",
@@ -47,7 +57,7 @@ BAI = {
    tag="LP phân bổ vùng + ràng buộc công bằng", headline="Công bằng vùng miền có giá 23,7%",
    formula=None,
    stats=[("Có ràng buộc công bằng","52.485"),("Không ràng buộc","68.750"),
-          ("Chi phí công bằng","16.265"),("Tỷ lệ đánh đổi","23,66%")],
+          ("Chi phí công bằng","16.265"),("Tỷ lệ đánh đ��i","23,66%")],
    reading="Bỏ ràng buộc công bằng, mô hình dồn hết vốn vào Đông Nam Bộ và ĐB sông Hồng. Giữ công bằng không miễn phí: giá của nó là 16.265 tỷ GDP bỏ lỡ, tương đương gần một phần tư tiềm năng.",
    insight="Con số 23,66% nên được công khai trong tranh luận ngân sách để quyết định dựa trên bằng chứng, không phải cảm tính.",
    caveat=None,
@@ -171,12 +181,20 @@ def _sidebar():
 def METuple():
     return f"{META['sv']} — {META['msv']} — {META['lop']}"
 
-def _img(path, caption):
-    if os.path.exists(path):
-        st.image(path, caption=caption, use_container_width=True)
+def _img(name, caption):
+    p = _resolve(name)
+    if p:
+        st.image(p, caption=caption, use_container_width=True)
     else:
-        st.warning("Thiếu biểu đồ: " + os.path.basename(path) +
-                   " — hãy upload thư mục charts/ (20 ảnh PNG) lên repo, cùng cấp với app.py.")
+        st.warning("Thiếu biểu đồ: " + name +
+                   " — upload các ảnh PNG lên repo (ở gốc repo hoặc trong thư mục charts/).")
+
+
+def _setcfg(title="AIDEOM-VN"):
+    try:
+        st.set_page_config(layout="wide", page_title=title, page_icon="📊")
+    except Exception:
+        pass
 
 
 def _charts(charts):
@@ -184,22 +202,22 @@ def _charts(charts):
     i = 0
     if len(imgs) % 2 == 1:
         f, cap = imgs[0]
-        _img(os.path.join(CHART_DIR, f + ".png"), cap)
+        _img(f + ".png", cap)
         i = 1
     while i < len(imgs):
         c1, c2 = st.columns(2)
         f1, cap1 = imgs[i]
         with c1:
-            _img(os.path.join(CHART_DIR, f1 + ".png"), cap1)
+            _img(f1 + ".png", cap1)
         if i + 1 < len(imgs):
             f2, cap2 = imgs[i + 1]
             with c2:
-                _img(os.path.join(CHART_DIR, f2 + ".png"), cap2)
+                _img(f2 + ".png", cap2)
         i += 2
 
 def render_bai(n):
     m = BAI[n]
-    st.set_page_config(layout="wide", page_title=f"AIDEOM-VN · {m['nav']}", page_icon="📊")
+    _setcfg(f"AIDEOM-VN · {m['nav']}")
     st.markdown(_CSS, unsafe_allow_html=True)
     _sidebar()
     st.markdown(f"<div class='eyebrow'>{m['cap']}</div>", unsafe_allow_html=True)
@@ -220,7 +238,7 @@ def render_bai(n):
         st.caption(f"⚠️ Giới hạn: {m['caveat']}")
 
 def render_home():
-    st.set_page_config(layout="wide", page_title="AIDEOM-VN", page_icon="📊")
+    _setcfg("AIDEOM-VN")
     st.markdown(_CSS, unsafe_allow_html=True)
     _sidebar()
     st.markdown("<div class='eyebrow'>Báo cáo cuối kỳ · BSA3035</div>", unsafe_allow_html=True)
@@ -233,7 +251,7 @@ def render_home():
     c[2].metric("Việc làm ròng do AI", "14,0 triệu")
     c[3].metric("Giá của công bằng vùng", "23,7%")
     st.write("")
-    _img(os.path.join(CHART_DIR, "ov_bubble.png"),
+    _img("ov_bubble.png",
          "Bản đồ sẵn sàng AI × rủi ro × quy mô lao động của 10 ngành.")
     st.markdown(
         "AIDEOM-VN không cố dự báo tương lai một cách tuyệt đối. Nó làm một việc khiêm tốn hơn "
@@ -245,7 +263,7 @@ def render_home():
             "gói gọn bản đồ 10 ngành và bốn luận điểm.")
 
 def render_ketluan():
-    st.set_page_config(layout="wide", page_title="AIDEOM-VN · Kết luận", page_icon="📊")
+    _setcfg("AIDEOM-VN · Kết luận")
     st.markdown(_CSS, unsafe_allow_html=True)
     _sidebar()
     st.markdown("<div class='eyebrow'>Tổng hợp chính sách</div>", unsafe_allow_html=True)
@@ -265,3 +283,27 @@ def render_ketluan():
                "chênh 0,36%) nằm trong biên sai số mô hình, nên hiểu là ‘không thua’ hơn là "
                "‘thắng rõ’. Điểm mạnh nằm ở tính nhất quán: cùng một kết luận xuất hiện độc lập "
                "qua nhiều phương pháp.")
+
+
+def main():
+    _setcfg()
+    labels = ["🏠 Trang chủ"]
+    keys = ["home"]
+    for _n in range(1, 13):
+        labels.append(BAI[_n]["nav"])
+        keys.append(_n)
+    labels.append("📌 Tổng hợp & Kết luận")
+    keys.append("ket")
+    idx = st.sidebar.radio("Điều hướng", range(len(labels)),
+                           format_func=lambda i: labels[i])
+    sel = keys[idx]
+    if sel == "home":
+        render_home()
+    elif sel == "ket":
+        render_ketluan()
+    else:
+        render_bai(sel)
+
+
+if __name__ == "__main__":
+    main()
