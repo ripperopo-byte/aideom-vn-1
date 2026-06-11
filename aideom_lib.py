@@ -237,6 +237,7 @@ def render_bai(n):
     st.success(f"**Hàm ý.** {m['insight']}")
     if m.get("caveat"):
         st.caption(f"⚠️ Giới hạn: {m['caveat']}")
+    _render_deep(n)
     _render_sim(n)
     _detail_tasks(n)
 
@@ -449,6 +450,12 @@ try:
     from aideom_detail import DETAIL as _DETAIL
 except Exception:
     _DETAIL = {}
+
+try:
+    from aideom_deep import render_deep as _render_deep
+except Exception:
+    def _render_deep(n):
+        return
 
 
 def _detail_objective(n):
