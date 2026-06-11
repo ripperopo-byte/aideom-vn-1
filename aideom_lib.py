@@ -181,25 +181,6 @@ def _sidebar():
 def METuple():
     return f"{META['sv']} — {META['msv']} — {META['lop']}"
 
-try:
-    from aideom_charts import FIGS as _FIGS
-except Exception:
-    _FIGS = {}
-
-
-def _chart(key, caption):
-    fn = _FIGS.get(key)
-    if fn is not None:
-        try:
-            st.plotly_chart(fn(), use_container_width=True, config={"displaylogo": False})
-            if caption:
-                st.caption(caption)
-            return
-        except Exception as e:
-            st.warning("Lỗi vẽ biểu đồ " + key + ": " + str(e))
-    _img(key + ".png", caption)
-
-
 def _img(name, caption):
     p = _resolve(name)
     if p:
@@ -221,17 +202,17 @@ def _charts(charts):
     i = 0
     if len(imgs) % 2 == 1:
         f, cap = imgs[0]
-        _chart(f, cap)
+        _img(f + ".png", cap)
         i = 1
     while i < len(imgs):
         c1, c2 = st.columns(2)
         f1, cap1 = imgs[i]
         with c1:
-            _chart(f1, cap1)
+            _img(f1 + ".png", cap1)
         if i + 1 < len(imgs):
             f2, cap2 = imgs[i + 1]
             with c2:
-                _chart(f2, cap2)
+                _img(f2 + ".png", cap2)
         i += 2
 
 def render_bai(n):
@@ -255,6 +236,7 @@ def render_bai(n):
     st.success(f"**Hàm ý.** {m['insight']}")
     if m.get("caveat"):
         st.caption(f"⚠️ Giới hạn: {m['caveat']}")
+    _render_sim(n)
 
 def render_home():
     _setcfg("AIDEOM-VN")
@@ -270,8 +252,8 @@ def render_home():
     c[2].metric("Việc làm ròng do AI", "14,0 triệu")
     c[3].metric("Giá của công bằng vùng", "23,7%")
     st.write("")
-    _chart("ov_bubble",
-           "Bản đồ sẵn sàng AI × rủi ro × quy mô lao động của 10 ngành.")
+    _img("ov_bubble.png",
+         "Bản đồ sẵn sàng AI × rủi ro × quy mô lao động của 10 ngành.")
     st.markdown(
         "AIDEOM-VN không cố dự báo tương lai một cách tuyệt đối. Nó làm một việc khiêm tốn hơn "
         "nhưng hữu dụng hơn: biến những lựa chọn chính sách thường được tranh luận bằng cảm tính "
@@ -326,3 +308,135 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ===================== MÔ PHỬNG TƯƠNG TÁC (sliders) =====================
+try:
+    import plotly.graph_objects as _go
+    import numpy as _np
+except Exception:
+    _go = None
+    _np = None
+
+_BLUE = "#2563eb"; _NAVY = "#14213d"; _GOLD = "#f59e0b"
+_GREEN = "#16a34a"; _CYAN = "#06b6d4"; _GRAY = "#64748b"; _RED = "#dc2626"
+
+
+def _simfig(fig, h=340, title=None):
+    fig.update_layout(template="plotly_white", height=h,
+                      margin=dict(l=20, r=20, t=40 if title else 24, b=30),
+                      font=dict(family="Georgia, serif", color=_NAVY, size=12),
+                      showlegend=False)
+    if title:
+        fig.update_layout(title=dict(text=title, font=dict(size=13, color=_NAVY)))
+    return fig
+
+
+def _sim_bai1():
+    st.caption("Kéo thanh trượt để xem GDP 2030 thay đổi theo cường độ đầu tư AI và mức nhân lực số.")
+    c = st.columns(3)
+    base_g = c[0].slider("Tăng trưởng nền, không AI (%/năm)", 0.5, 3.5, 1.80, 0.05)
+    ai_g = c[1].slider("Đóng góp AI (điểm %/năm)", 0.0, 1.5, 0.61, 0.01)
+    H = c[2].slider("Mức nhân lực số H (%)", 0, 120, 100, 5)
+    eff = base_g + ai_g * (H / 100.0)
+    base2025 = 12847.6
+    years = list(range(2025, 2031))
+    series = [base2025 * (1 + eff / 100) ** (y - 2025) for y in years]
+    gdp2030 = series[-1]
+    m = st.columns(2)
+    m[0].metric("Tăng trưởng tổng hợp", f"{eff:.2f}%/năm")
+    m[1].metric("GDP 2030 dự phóng", f"{gdp2030:,.0f}", f"{gdp2030 - 14472.4:+,.0f} so với gốc")
+    fig = _go.Figure(_go.Scatter(x=years, y=series, mode="lines+markers",
+                     line=dict(color=_BLUE, width=3),
+                     marker=dict(size=9, color="white", line=dict(color=_BLUE, width=2)),
+                     hovertemplate="%{x}: %{y:,.0f}<extra></extra>"))
+    fig.add_hline(y=14472.4, line_dash="dash", line_color=_GRAY,
+                  annotation_text="Kịch bản gốc 14.472", annotation_font_color=_GRAY)
+    _simfig(fig)
+    fig.update_yaxes(title="GDP (nghìn tỷ VND)")
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+    if H == 0:
+        st.info("👉 Khi H = 0, đóng góp của AI biến mất hoàn toàn — đúng với luận điểm “AI không có H là vốn chết”.")
+
+
+def _sim_bai2():
+    st.caption("Điều chỉnh tổng ngân sách — giá trị mục tiêu Z* thay đổi theo giá bóng ngân sách (1,35).")
+    B = st.slider("Tổng ngân sách (nghìn tỷ VND)", 50, 150, 100, 5)
+    shadow = 1.35
+    Z = 112.25 + shadow * (B - 100)
+    base_alloc = [25, 15, 20, 40]
+    alloc = [a * B / 100 for a in base_alloc]
+    m = st.columns(2)
+    m[0].metric("Giá trị mục tiêu Z*", f"{Z:.2f}", f"{Z - 112.25:+.2f}")
+    m[1].metric("Giá bóng ngân sách", "1,35", "tỷ GDP / tỷ NS")
+    items = ["Hạ tầng số", "AI & Dữ liệu", "Nhân lực số", "R&D công nghệ"]
+    fig = _go.Figure(_go.Bar(x=items, y=alloc, marker_color=[_CYAN, _BLUE, _GREEN, _GOLD],
+                     text=[f"{v:.0f}" for v in alloc], textposition="outside",
+                     hovertemplate="%{x}: %{y:.1f} nghìn tỷ<extra></extra>"))
+    _simfig(fig)
+    fig.update_yaxes(title="Nghìn tỷ VND")
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+    st.caption("Xấp xỉ tuyến tính quanh điểm tối ưu gốc (100 nghìn tỷ); mỗi tỷ ngân sách thêm tạo ~1,35 tỷ GDP.")
+
+
+def _sim_bai7():
+    st.caption("Kéo mức trần bất bình đẳng (Gini) để chọn nghiệm tương ứng trên mặt Pareto.")
+    gini_max = st.slider("Trần hệ số Gini chấp nhận", 0.81, 1.92, 0.84, 0.01)
+    gdp = 26987 + (gini_max - 0.81) / (1.92 - 0.81) * (69773 - 26987)
+    m = st.columns(2)
+    m[0].metric("GDP gain đạt được", f"{gdp:,.0f}", "tỷ VND")
+    m[1].metric("Mức Gini", f"{gini_max:.2f}")
+    gx = _np.linspace(0.81, 1.92, 60)
+    gy = 26987 + (gx - 0.81) / (1.92 - 0.81) * (69773 - 26987)
+    fig = _go.Figure()
+    fig.add_trace(_go.Scatter(x=gy, y=gx, mode="lines", line=dict(color=_BLUE, width=2.5),
+                  hovertemplate="GDP %{x:,.0f}<br>Gini %{y:.2f}<extra></extra>"))
+    fig.add_trace(_go.Scatter(x=[gdp], y=[gini_max], mode="markers",
+                  marker=dict(symbol="star", size=20, color=_RED, line=dict(color="white", width=1.2)),
+                  hovertemplate="Nghiệm chọn<br>GDP %{x:,.0f}<br>Gini %{y:.2f}<extra></extra>"))
+    _simfig(fig)
+    fig.update_xaxes(title="GDP gain (tỷ VND)")
+    fig.update_yaxes(title="Hệ số Gini")
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+    st.caption("Càng chấp nhận bất bình đẳng cao hơn, GDP đạt được càng lớn — đó chính là đánh đổi Pareto.")
+
+
+def _sim_bai11():
+    st.caption("Kéo số episode huấn luyện để xem tác nhân học dần đến chính sách tối ưu.")
+    N = st.slider("Số episode huấn luyện", 0, 5000, 5000, 250)
+    ep = [0, 250, 500, 1000, 1500, 2000, 3000, 4000, 5000]
+    rw = [5, 11, 16, 19.5, 22, 23.2, 24.5, 25.2, 25.56]
+    reward = float(_np.interp(N, ep, rw))
+    xs = [e for e in ep if e <= N]
+    ys = rw[:len(xs)]
+    if not xs or xs[-1] != N:
+        xs = xs + [N]
+        ys = ys + [reward]
+    m = st.columns(2)
+    m[0].metric("Reward trung bình", f"{reward:.2f}", f"{reward - 21.32:+.2f} so với random")
+    m[1].metric("Tiến độ học", f"{N:,} ep")
+    fig = _go.Figure(_go.Scatter(x=xs, y=ys, mode="lines+markers",
+                     line=dict(color=_BLUE, width=2.6),
+                     marker=dict(size=7, color="white", line=dict(color=_BLUE, width=2)),
+                     hovertemplate="Episode %{x}<br>Reward %{y:.2f}<extra></extra>"))
+    fig.add_hline(y=21.32, line_dash="dash", line_color=_GRAY,
+                  annotation_text="Random baseline 21,32", annotation_font_color=_GRAY)
+    _simfig(fig)
+    fig.update_xaxes(title="Episode", range=[0, 5000])
+    fig.update_yaxes(title="Reward trung bình", range=[0, 28])
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+    if reward > 21.32:
+        st.success("👉 Tác nhân đã vượt baseline ngẫu nhiên — chính sách học được đang sinh lợi.")
+    else:
+        st.info("👉 Giai đoạn đầu: tác nhân chưa học đủ, còn thua chiến lược ngẫu nhiên.")
+
+
+_SIM = {1: _sim_bai1, 2: _sim_bai2, 7: _sim_bai7, 11: _sim_bai11}
+
+
+def _render_sim(n):
+    if _go is None or _np is None or n not in _SIM:
+        return
+    st.divider()
+    with st.expander("🎛️ Mô phỏng tương tác — kéo thanh trượt để thử kịch bản", expanded=True):
+        _SIM[n]()

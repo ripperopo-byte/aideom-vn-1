@@ -286,7 +286,6 @@ def scenarios():
     sc = ["S1 Truyền thống", "S2 Số hóa nhanh", "S3 AI dẫn dắt", "S4 Bao trùm số", "S5 Tối ưu cân bằng"]
     g = [20133.54, 18970.96, 18026.91, 20082.49, 20205.52]
     cols = [BLUE, CYAN, RED, GREEN, GOLD]
-    lines = [dict(width=0)] * 5
     fig = go.Figure(go.Bar(x=sc, y=g, marker_color=cols,
                     marker_line=dict(color=[NAVY if i == 4 else "rgba(0,0,0,0)" for i in range(5)],
                                      width=[2.4 if i == 4 else 0 for i in range(5)]),
