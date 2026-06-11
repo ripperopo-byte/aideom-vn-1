@@ -225,6 +225,7 @@ def render_bai(n):
     st.markdown(f"## {m['code']} — {m['headline']}")
     if m.get("formula"):
         st.markdown(f"<div class='formula'>{m['formula']}</div>", unsafe_allow_html=True)
+    _detail_objective(n)
     st.write("")
     cols = st.columns(len(m["stats"]))
     for col, (lab, val) in zip(cols, m["stats"]):
@@ -237,6 +238,7 @@ def render_bai(n):
     if m.get("caveat"):
         st.caption(f"⚠️ Giới hạn: {m['caveat']}")
     _render_sim(n)
+    _detail_tasks(n)
 
 def render_home():
     _setcfg("AIDEOM-VN")
@@ -440,3 +442,35 @@ def _render_sim(n):
     st.divider()
     with st.expander("🎛️ Mô phỏng tương tác — kéo thanh trượt để thử kịch bản", expanded=True):
         _SIM[n]()
+
+
+# ===================== 3 PHỪ N CHUẨN THEO ĐỀ BÀI =====================
+try:
+    from aideom_detail import DETAIL as _DETAIL
+except Exception:
+    _DETAIL = {}
+
+
+def _detail_objective(n):
+    d = _DETAIL.get(n)
+    if not d:
+        return
+    st.markdown(
+        "<div style='background:#eef6f2;border-left:4px solid #1f6f5c;border-radius:8px;"
+        "padding:10px 14px;margin:6px 0 2px;font-size:15px;line-height:1.6'>"
+        "<b>🎯 Mục tiêu học tập.</b> " + d["muctieu"] + "</div>",
+        unsafe_allow_html=True)
+
+
+def _detail_tasks(n):
+    d = _DETAIL.get(n)
+    if not d:
+        return
+    st.write("")
+    st.markdown("---")
+    with st.expander("💻 Yêu cầu lập trình (theo đề bài)", expanded=False):
+        for q in d["yeucau"]:
+            st.markdown("- " + q)
+    with st.expander("🏛️ Câu hỏi thảo luận chính sách", expanded=False):
+        for q in d["thaoluan"]:
+            st.markdown("- " + q)
