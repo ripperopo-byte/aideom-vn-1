@@ -181,6 +181,25 @@ def _sidebar():
 def METuple():
     return f"{META['sv']} — {META['msv']} — {META['lop']}"
 
+try:
+    from aideom_charts import FIGS as _FIGS
+except Exception:
+    _FIGS = {}
+
+
+def _chart(key, caption):
+    fn = _FIGS.get(key)
+    if fn is not None:
+        try:
+            st.plotly_chart(fn(), use_container_width=True, config={"displaylogo": False})
+            if caption:
+                st.caption(caption)
+            return
+        except Exception as e:
+            st.warning("Lỗi vẽ biểu đồ " + key + ": " + str(e))
+    _img(key + ".png", caption)
+
+
 def _img(name, caption):
     p = _resolve(name)
     if p:
@@ -202,17 +221,17 @@ def _charts(charts):
     i = 0
     if len(imgs) % 2 == 1:
         f, cap = imgs[0]
-        _img(f + ".png", cap)
+        _chart(f, cap)
         i = 1
     while i < len(imgs):
         c1, c2 = st.columns(2)
         f1, cap1 = imgs[i]
         with c1:
-            _img(f1 + ".png", cap1)
+            _chart(f1, cap1)
         if i + 1 < len(imgs):
             f2, cap2 = imgs[i + 1]
             with c2:
-                _img(f2 + ".png", cap2)
+                _chart(f2, cap2)
         i += 2
 
 def render_bai(n):
@@ -251,8 +270,8 @@ def render_home():
     c[2].metric("Việc làm ròng do AI", "14,0 triệu")
     c[3].metric("Giá của công bằng vùng", "23,7%")
     st.write("")
-    _img("ov_bubble.png",
-         "Bản đồ sẵn sàng AI × rủi ro × quy mô lao động của 10 ngành.")
+    _chart("ov_bubble",
+           "Bản đồ sẵn sàng AI × rủi ro × quy mô lao động của 10 ngành.")
     st.markdown(
         "AIDEOM-VN không cố dự báo tương lai một cách tuyệt đối. Nó làm một việc khiêm tốn hơn "
         "nhưng hữu dụng hơn: biến những lựa chọn chính sách thường được tranh luận bằng cảm tính "
