@@ -171,22 +171,30 @@ def _sidebar():
 def METuple():
     return f"{META['sv']} — {META['msv']} — {META['lop']}"
 
+def _img(path, caption):
+    if os.path.exists(path):
+        st.image(path, caption=caption, use_container_width=True)
+    else:
+        st.warning("Thiếu biểu đồ: " + os.path.basename(path) +
+                   " — hãy upload thư mục charts/ (20 ảnh PNG) lên repo, cùng cấp với app.py.")
+
+
 def _charts(charts):
     imgs = [c for c in charts]
     i = 0
     if len(imgs) % 2 == 1:
         f, cap = imgs[0]
-        st.image(os.path.join(CHART_DIR, f + ".png"), caption=cap, use_container_width=True)
+        _img(os.path.join(CHART_DIR, f + ".png"), cap)
         i = 1
     while i < len(imgs):
         c1, c2 = st.columns(2)
         f1, cap1 = imgs[i]
         with c1:
-            st.image(os.path.join(CHART_DIR, f1 + ".png"), caption=cap1, use_container_width=True)
+            _img(os.path.join(CHART_DIR, f1 + ".png"), cap1)
         if i + 1 < len(imgs):
             f2, cap2 = imgs[i + 1]
             with c2:
-                st.image(os.path.join(CHART_DIR, f2 + ".png"), caption=cap2, use_container_width=True)
+                _img(os.path.join(CHART_DIR, f2 + ".png"), cap2)
         i += 2
 
 def render_bai(n):
@@ -225,9 +233,8 @@ def render_home():
     c[2].metric("Việc làm ròng do AI", "14,0 triệu")
     c[3].metric("Giá của công bằng vùng", "23,7%")
     st.write("")
-    st.image(os.path.join(CHART_DIR, "ov_bubble.png"),
-             caption="Bản đồ sẵn sàng AI × rủi ro × quy mô lao động của 10 ngành.",
-             use_container_width=True)
+    _img(os.path.join(CHART_DIR, "ov_bubble.png"),
+         "Bản đồ sẵn sàng AI × rủi ro × quy mô lao động của 10 ngành.")
     st.markdown(
         "AIDEOM-VN không cố dự báo tương lai một cách tuyệt đối. Nó làm một việc khiêm tốn hơn "
         "nhưng hữu dụng hơn: biến những lựa chọn chính sách thường được tranh luận bằng cảm tính "
