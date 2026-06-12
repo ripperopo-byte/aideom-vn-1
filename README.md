@@ -1,8 +1,5 @@
 # AIDEOM-VN — Dashboard Streamlit
 
-Dashboard tương tác trình bày 12 bài mô hình AIDEOM-VN, GIỮ NGUYÊN cách phân tích
-và diễn đạt của báo cáo — đồng bộ với bài luận Word, không cần sửa bài luận.
-
 ## Cách chạy (local)
 ```bash
 pip install -r requirements.txt
@@ -20,4 +17,4 @@ Mở trình duyệt tại http://localhost:8501
 - `aideom_lib.py` — toàn bộ nội dung phân tích + bố cục dùng chung
 - `charts/` — 20 biểu đồ PNG
 
-Sinh viên: Trần Đình Hướng · 23050491 · QH-2023-E KTPT 3 · BSA3035 · 2026
+
